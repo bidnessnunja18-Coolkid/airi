@@ -12,6 +12,7 @@ import {
   handlePageContext,
   handleSubtitle,
   handleVideoContext,
+  handleVisionFrame,
   toStatus,
 } from '../src/background/client'
 import { loadSettings, saveSettings } from '../src/background/storage'
@@ -110,7 +111,7 @@ function handleContentMessage(message: ContentToBackgroundMessage) {
       break
     }
     case 'content:vision:frame': {
-      state.lastVisionFrameAt = Date.now()
+      handleVisionFrame(state, settings, message.payload)
       emitStatus()
       break
     }

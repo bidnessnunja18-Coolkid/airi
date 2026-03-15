@@ -240,3 +240,60 @@ export function handleSubtitle(state: ClientState, settings: ExtensionSettings, 
     },
   })
 }
+
+export interface VisionFramePayload {
+  site: string
+  url: string
+  videoId?: string
+  title?: string
+  capturedAt: number
+  width: number
+  height: number
+  dataUrl: string
+}
+
+export function handleVisionFrame(state: ClientState, settings: ExtensionSettings, payload: VisionFramePayload) {
+  state.lastVisionFrameAt = Date.now()
+
+  if (!settings.enabled || !settings.enableVision)
+    return
+
+  // Send vision frame as spark:notify for immediate character attention
+  const headline = payload.title
+    ? `I see: ${payload.title}`
+    : 'I see a video frame'
+
+  sendSparkNotify(state, {
+    headline,
+    note: `Captured ${payload.width}x${payload.height} frame from ${payload.site}`,
+    payload: {
+      type: 'vision:frame',
+      site: payload.site,
+      url: payload.url,
+      title: payload.title,
+      videoId: payload.videoId,
+      capturedAt: payload.capturedAt,
+      width: payload.width,
+      height: payload.height,
+      dataUrl: payload.dataUrl,
+    },
+  })
+
+  // Also send as context update for memory
+  sendContextUpdate(state, {
+    strategy: ContextUpdateStrategy.ReplaceSelf,
+    lane: 'web:vision',
+    text: `[Vision frame captured: ${payload.title || 'unknown video'}]`,
+    metadata: {
+      source: 'web-extension',
+      type: 'vision:frame',
+      site: payload.site,
+      url: payload.url,
+      title: payload.title,
+      videoId: payload.videoId,
+      hasImageData: true,
+      imageWidth: payload.width,
+      imageHeight: payload.height,
+    },
+  })
+}
